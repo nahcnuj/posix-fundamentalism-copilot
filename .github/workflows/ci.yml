@@ -19,4 +19,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run tests with ${{ matrix.shell }}
+        env:
+          SHELL_UNDER_TEST: ${{ matrix.shell }}
         run: ${{ matrix.shell }} to_unix_time/test_to_unix_time.sh

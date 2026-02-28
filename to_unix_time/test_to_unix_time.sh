@@ -9,7 +9,7 @@ FAIL=0
 assert_eq() {
     input=$1
     expected=$2
-    actual=$(printf '%s\n' "$input" | sh "$(dirname "$0")/to_unix_time.sh")
+    actual=$(printf '%s\n' "$input" | "${SHELL_UNDER_TEST:-sh}" "$(dirname "$0")/to_unix_time.sh")
     if [ "$actual" = "$expected" ]; then
         printf 'PASS: %s -> %s\n' "$input" "$actual"
         PASS=$((PASS + 1))
