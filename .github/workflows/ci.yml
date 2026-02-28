@@ -12,11 +12,22 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        shell: [sh, bash]
+        shell: [sh, bash, zsh]
         include:
           - os: ubuntu-latest
             shell: dash
+          - os: ubuntu-latest
+            shell: fish
+            install: sudo apt-get install -y fish
     steps:
       - uses: actions/checkout@v4
+      - name: Install ${{ matrix.shell }}
+        if: matrix.install
+        run: ${{ matrix.install }}
       - name: Run tests with ${{ matrix.shell }}
-        run: ${{ matrix.shell }} to_unix_time/test_to_unix_time.sh
+        run: |
+          if [ "${{ matrix.shell }}" = "fish" ]; then
+            fish -c 'sh to_unix_time/test_to_unix_time.sh'
+          else
+            ${{ matrix.shell }} to_unix_time/test_to_unix_time.sh
+          fi
