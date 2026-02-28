@@ -3,7 +3,7 @@
 
 PASS=0
 FAIL=0
-SCRIPT_DIR=$(dirname -- "$0")
+SCRIPT_DIR=$(dirname "$0")
 
 # shellcheck source=./resolve_script_dir.sh
 . "$SCRIPT_DIR/resolve_script_dir.sh"
