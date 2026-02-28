@@ -138,5 +138,23 @@ assert_no_ip_no_ifconfig() {
 }
 assert_no_ip_no_ifconfig
 
+# assert_bare_name_not_in_path: verifies that the bare-name invocation path
+# (the '*) command -v' branch) is reachable and exits non-zero when the script
+# cannot be resolved via PATH.
+assert_bare_name_not_in_path() {
+    fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_ipv4_addrs.XXXXXX") || return 1
+    ( cd "$SCRIPT_DIR" && PATH="$fake_dir" "$SHELL" ipv4_addrs.sh ) >/dev/null 2>&1
+    rc=$?
+    rm -rf "$fake_dir"
+    if [ "$rc" -ne 0 ]; then
+        printf 'PASS: ipv4_addrs.sh (bare name, not in PATH) causes non-zero exit (%d)\n' "$rc"
+        PASS=$((PASS + 1))
+    else
+        printf 'FAIL: expected non-zero exit for bare-name invocation without PATH, got 0\n'
+        FAIL=$((FAIL + 1))
+    fi
+}
+assert_bare_name_not_in_path
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

@@ -74,5 +74,25 @@ assert_rejects_invalid_tz() {
 }
 assert_rejects_invalid_tz
 
+# assert_bare_name_not_in_path: verifies that the bare-name invocation path
+# (the '*) command -v' branch) is reachable and exits non-zero when the script
+# cannot be resolved via PATH.
+assert_bare_name_not_in_path() {
+    fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_from_unix_time.XXXXXX") || return 1
+    printf '#!/bin/sh\necho +0000\n' > "$fake_dir/date"
+    chmod +x "$fake_dir/date"
+    ( cd "$SCRIPT_DIR" && printf '0\n' | PATH="$fake_dir" "$SHELL" from_unix_time.sh ) >/dev/null 2>&1
+    rc=$?
+    rm -rf "$fake_dir"
+    if [ "$rc" -ne 0 ]; then
+        printf 'PASS: from_unix_time.sh (bare name, not in PATH) causes non-zero exit (%d)\n' "$rc"
+        PASS=$((PASS + 1))
+    else
+        printf 'FAIL: expected non-zero exit for bare-name invocation without PATH, got 0\n'
+        FAIL=$((FAIL + 1))
+    fi
+}
+assert_bare_name_not_in_path
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
