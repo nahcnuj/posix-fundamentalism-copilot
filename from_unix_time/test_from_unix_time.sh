@@ -34,12 +34,12 @@ assert_eq_with_tz() {
     tz_offset=$1
     input=$2
     expected=$3
-    fake_dir=$(mktemp -d)
+    fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_from_unix_time.XXXXXX") || return 1
     printf '#!/bin/sh\necho %s\n' "$tz_offset" > "$fake_dir/date"
     chmod +x "$fake_dir/date"
     actual=$(printf '%s\n' "$input" | PATH="$fake_dir:$PATH" "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/from_unix_time.sh")
     rc=$?
-    [ -n "$fake_dir" ] && rm -rf "$fake_dir"
+    rm -rf "$fake_dir"
     if [ "$rc" -eq 0 ] && [ "$actual" = "$expected" ]; then
         printf 'PASS: %s (tz=%s) -> %s\n' "$input" "$tz_offset" "$actual"
         PASS=$((PASS + 1))
@@ -58,12 +58,12 @@ assert_eq_with_tz "-0700" "0"          "19691231170000"
 # assert_rejects_invalid_tz: verifies that the script exits non-zero when
 # date +%z returns a value that does not match the expected ±HHMM format.
 assert_rejects_invalid_tz() {
-    fake_dir=$(mktemp -d)
+    fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_from_unix_time.XXXXXX") || return 1
     printf '#!/bin/sh\necho BADTZ\n' > "$fake_dir/date"
     chmod +x "$fake_dir/date"
     printf '0\n' | PATH="$fake_dir:$PATH" "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/from_unix_time.sh" >/dev/null 2>&1
     rc=$?
-    [ -n "$fake_dir" ] && rm -rf "$fake_dir"
+    rm -rf "$fake_dir"
     if [ "$rc" -ne 0 ]; then
         printf 'PASS: invalid tz_offset causes non-zero exit (%d)\n' "$rc"
         PASS=$((PASS + 1))
