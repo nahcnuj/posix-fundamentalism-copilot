@@ -12,7 +12,6 @@ case "$0" in
     */*) _script_path=$0 ;;
     *) _script_path=$(command -v "$0") || { printf 'error: cannot resolve path for %s\n' "$0" >&2; exit 1; } ;;
 esac
-_lib_sh_dir=$(dirname "$_script_path")/..
-. "$_lib_sh_dir/lib.sh"
-script_dir=$(resolve_script_dir "$0") || exit 1
+script_dir=$(cd "$(dirname "$_script_path")" && pwd) || exit 1
+. "$script_dir/../lib.sh"
 awk -v tz_offset="$tz_offset" -f "$script_dir/from_unix_time.awk"
