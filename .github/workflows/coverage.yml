@@ -25,7 +25,10 @@ jobs:
       - name: Run unit tests with coverage
         env:
           SHELL_UNDER_TEST: bash
-        run: kcov --include-path=. --exclude-pattern=test coverage ./test.sh
+        run: |
+          shopt -s nullglob
+          include_path=$(printf '%s\n' */test_*.sh | sed 's|/.*||' | sort -u | paste -sd,)
+          kcov --include-path="$include_path" --exclude-pattern=test coverage ./test.sh
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
