@@ -3,13 +3,14 @@
 
 PASS=0
 FAIL=0
+SCRIPT_DIR=$(dirname "$0")
 
 # assert_eq: takes an input string and expected output string,
 # runs to_unix_time.sh with the input, and verifies the result matches the expected output.
 assert_eq() {
     input=$1
     expected=$2
-    actual=$(printf '%s\n' "$input" | "${SHELL_UNDER_TEST:-sh}" "$(dirname "$0")/to_unix_time.sh")
+    actual=$(printf '%s\n' "$input" | "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/to_unix_time.sh")
     if [ "$actual" = "$expected" ]; then
         printf 'PASS: %s -> %s\n' "$input" "$actual"
         PASS=$((PASS + 1))
