@@ -32,9 +32,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run unit tests with ${{ matrix.shell }}
         env:
-          SHELL_UNDER_TEST: ${{ matrix.shell }}
+          SHELL: ${{ matrix.shell }}
         run: ${{ matrix.shell }} test.sh
       - name: Run property-based tests with ${{ matrix.shell }}
         env:
-          SHELL_UNDER_TEST: ${{ matrix.shell }}
+          SHELL: ${{ matrix.shell }}
         run: ${{ matrix.shell }} property_tests/property_test_unix_time.sh

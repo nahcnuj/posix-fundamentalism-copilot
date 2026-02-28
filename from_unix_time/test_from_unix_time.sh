@@ -15,7 +15,7 @@ SCRIPT_DIR=$(dirname "$0")
 assert_eq() {
     input=$1
     expected=$2
-    actual=$(printf '%s\n' "$input" | "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/from_unix_time.sh")
+    actual=$(printf '%s\n' "$input" | "${SHELL:-sh}" "$SCRIPT_DIR/from_unix_time.sh")
     if [ "$actual" = "$expected" ]; then
         printf 'PASS: %s -> %s\n' "$input" "$actual"
         PASS=$((PASS + 1))
@@ -37,7 +37,7 @@ assert_eq_with_tz() {
     fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_from_unix_time.XXXXXX") || return 1
     printf '#!/bin/sh\necho %s\n' "$tz_offset" > "$fake_dir/date"
     chmod +x "$fake_dir/date"
-    actual=$(printf '%s\n' "$input" | PATH="$fake_dir:$PATH" "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/from_unix_time.sh")
+    actual=$(printf '%s\n' "$input" | PATH="$fake_dir:$PATH" "${SHELL:-sh}" "$SCRIPT_DIR/from_unix_time.sh")
     rc=$?
     rm -rf "$fake_dir"
     if [ "$rc" -eq 0 ] && [ "$actual" = "$expected" ]; then
@@ -61,7 +61,7 @@ assert_rejects_invalid_tz() {
     fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_from_unix_time.XXXXXX") || return 1
     printf '#!/bin/sh\necho BADTZ\n' > "$fake_dir/date"
     chmod +x "$fake_dir/date"
-    printf '0\n' | PATH="$fake_dir:$PATH" "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/from_unix_time.sh" >/dev/null 2>&1
+    printf '0\n' | PATH="$fake_dir:$PATH" "${SHELL:-sh}" "$SCRIPT_DIR/from_unix_time.sh" >/dev/null 2>&1
     rc=$?
     rm -rf "$fake_dir"
     if [ "$rc" -ne 0 ]; then

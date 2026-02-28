@@ -13,7 +13,7 @@ printf 'SEED=%s\n' "$SEED"
 # (unix->datetime->unix), and verifies the result matches the original input.
 assert_roundtrip_unix() {
     input=$1
-    actual=$(printf '%s\n' "$input" | "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/../from_unix_time/from_unix_time.sh" | "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/../to_unix_time/to_unix_time.sh")
+    actual=$(printf '%s\n' "$input" | "${SHELL:-sh}" "$SCRIPT_DIR/../from_unix_time/from_unix_time.sh" | "${SHELL:-sh}" "$SCRIPT_DIR/../to_unix_time/to_unix_time.sh")
     if [ "$actual" = "$input" ]; then
         printf 'PASS (unix->datetime->unix): %s -> %s\n' "$input" "$actual"
         PASS=$((PASS + 1))
@@ -27,7 +27,7 @@ assert_roundtrip_unix() {
 # (datetime->unix->datetime), and verifies the result matches the original input.
 assert_roundtrip_datetime() {
     input=$1
-    actual=$(printf '%s\n' "$input" | "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/../to_unix_time/to_unix_time.sh" | "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/../from_unix_time/from_unix_time.sh")
+    actual=$(printf '%s\n' "$input" | "${SHELL:-sh}" "$SCRIPT_DIR/../to_unix_time/to_unix_time.sh" | "${SHELL:-sh}" "$SCRIPT_DIR/../from_unix_time/from_unix_time.sh")
     if [ "$actual" = "$input" ]; then
         printf 'PASS (datetime->unix->datetime): %s -> %s\n' "$input" "$actual"
         PASS=$((PASS + 1))
