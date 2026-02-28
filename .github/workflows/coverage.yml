@@ -23,8 +23,6 @@ jobs:
           cmake --build /tmp/kcov/build -j$(nproc)
           sudo cmake --install /tmp/kcov/build
       - name: Run unit tests with coverage
-        env:
-          SHELL: bash
         shell: bash
         run: |
           shopt -s nullglob
