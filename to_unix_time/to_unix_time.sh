@@ -7,47 +7,8 @@ case "$tz_offset" in
     [+-][0-9][0-9][0-9][0-9]) : ;;
     *) printf 'error: date +%%z returned unexpected value: %s\n' "$tz_offset" >&2; exit 1 ;;
 esac
-awk -v tz_offset="$tz_offset" '
-BEGIN {
-    split("31 28 31 30 31 30 31 31 30 31 30 31", days_in_month)
-    sign = (substr(tz_offset, 1, 1) == "-") ? -1 : 1
-    hh = substr(tz_offset, 2, 2) + 0
-    mm = substr(tz_offset, 4, 2) + 0
-    offset_sec = sign * (hh * 3600 + mm * 60)
-}
-{
-    year  = substr($0, 1, 4) + 0
-    month = substr($0, 5, 2) + 0
-    day   = substr($0, 7, 2) + 0
-    hour  = substr($0, 9, 2) + 0
-    min   = substr($0, 11, 2) + 0
-    sec   = substr($0, 13, 2) + 0
-
-    total_days = 0
-    if (year >= 1970) {
-        for (y = 1970; y < year; y++) {
-            if ((y % 4 == 0 && y % 100 != 0) || y % 400 == 0)
-                total_days += 366
-            else
-                total_days += 365
-        }
-    } else {
-        for (y = year; y < 1970; y++) {
-            if ((y % 4 == 0 && y % 100 != 0) || y % 400 == 0)
-                total_days -= 366
-            else
-                total_days -= 365
-        }
-    }
-
-    is_leap = ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0)
-    for (m = 1; m < month; m++) {
-        total_days += days_in_month[m]
-        if (m == 2 && is_leap) total_days += 1
-    }
-
-    total_days += day - 1
-
-    print total_days * 86400 + hour * 3600 + min * 60 + sec - offset_sec
-}
-'
+script_path=$0; case $0 in */*) ;; *) script_path=$(command -v -- "$0") || { printf 'error: cannot resolve path to %s\n' "$0" >&2; exit 1; } ;; esac
+script_dir=${script_path%/*}
+awk_prog=$script_dir/to_unix_time.awk
+[ -r "$awk_prog" ] || { printf 'error: cannot find AWK program: %s\n' "$awk_prog" >&2; exit 1; }
+awk -v tz_offset="$tz_offset" -f "$awk_prog"

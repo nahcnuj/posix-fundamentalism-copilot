@@ -74,5 +74,28 @@ assert_rejects_invalid_tz() {
 }
 assert_rejects_invalid_tz
 
+# assert_eq_noslash: like assert_eq but invokes the script without a slash in $0,
+# covering the PATH-based invocation where script_path is resolved via command -v.
+assert_eq_noslash() {
+    input=$1
+    expected=$2
+    abs_script_dir=$(cd "$SCRIPT_DIR" && pwd) || return 1
+    fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_from_unix_time_noslash.XXXXXX") || return 1
+    actual=$(
+        cd "$fake_dir" && \
+        printf '%s\n' "$input" | PATH="$abs_script_dir:$PATH" "$SHELL" from_unix_time.sh
+    )
+    rc=$?
+    rm -rf "$fake_dir"
+    if [ "$rc" -eq 0 ] && [ "$actual" = "$expected" ]; then
+        printf 'PASS: %s -> %s (no-slash $0)\n' "$input" "$actual"
+        PASS=$((PASS + 1))
+    else
+        printf 'FAIL: %s -> expected %s, got %s (no-slash $0, exit %d)\n' "$input" "$expected" "$actual" "$rc"
+        FAIL=$((FAIL + 1))
+    fi
+}
+assert_eq_noslash "0" "$(unix_to_local 0)"
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
