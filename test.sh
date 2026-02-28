@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Run all unit tests
 
 SCRIPT_DIR=$(dirname "$0")

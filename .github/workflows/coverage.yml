@@ -25,7 +25,7 @@ jobs:
       - name: Run unit tests with coverage
         env:
           SHELL_UNDER_TEST: bash
-        run: kcov --include-path=. coverage bash test.sh
+        run: kcov --include-path=. coverage ./test.sh
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
@@ -74,13 +74,16 @@ jobs:
               `| Coverage | ${percent}% |`,
             ].join('\n');
 
-            const marker = '<!-- coverage-report -->';
+            const marker = '[coverage-report]: #';
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            const existing = comments.find(c => c.body?.includes(marker));
+            const existing = comments.find(c =>
+              c.body?.includes(marker) ||
+              (c.user?.login === 'github-actions[bot]' && c.body?.includes('| Lines covered |'))
+            );
             if (existing) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
