@@ -3,7 +3,7 @@
 
 PASS=0
 FAIL=0
-SCRIPT_DIR=$(dirname "$0")
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 
 # shellcheck source=./resolve_script_dir.sh
 . "$SCRIPT_DIR/resolve_script_dir.sh"
@@ -23,9 +23,8 @@ assert_resolve_script_dir() {
     fi
 }
 
-# resolve_script_dir with a path containing '/': returns dirname of the path
-assert_resolve_script_dir "/usr/bin/awk" "/usr/bin"
-assert_resolve_script_dir "./foo/bar.sh" "./foo"
+# resolve_script_dir with a path containing '/': returns absolute dirname of the path
+assert_resolve_script_dir "$SCRIPT_DIR/resolve_script_dir.sh" "$SCRIPT_DIR"
 
 # resolve_script_dir with a command found in PATH: returns the directory of the command
 assert_resolve_script_dir_via_path() {
