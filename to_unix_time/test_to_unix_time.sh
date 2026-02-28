@@ -4,6 +4,8 @@
 PASS=0
 FAIL=0
 
+# assert_eq: takes an input string and expected output string,
+# runs to_unix_time.sh with the input, and verifies the result matches the expected output.
 assert_eq() {
     input=$1
     expected=$2

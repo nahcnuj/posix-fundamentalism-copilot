@@ -6,10 +6,17 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: read
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        shell: [sh, bash]
+        include:
+          - os: ubuntu-latest
+            shell: dash
     steps:
       - uses: actions/checkout@v4
-      - name: Run tests
-        run: sh test_to_unix_time.sh
+      - name: Run tests with ${{ matrix.shell }}
+        run: ${{ matrix.shell }} to_unix_time/test_to_unix_time.sh
