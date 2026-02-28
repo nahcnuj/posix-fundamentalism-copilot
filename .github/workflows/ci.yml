@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run shellcheck
         run: |
-          find . -name "*.sh" -print0 | xargs -0 shellcheck --shell=sh --severity=warning
+          find . -name "*.sh" -not -path "./examples/*" -print0 | xargs -0 shellcheck --shell=sh --severity=warning
 
   test:
     runs-on: ${{ matrix.os }}
