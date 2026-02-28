@@ -1,12 +1,12 @@
 #!/bin/sh
-# Unit tests for lib.sh
+# Unit tests for lib/resolve_script_dir.sh
 
 PASS=0
 FAIL=0
 SCRIPT_DIR=$(dirname -- "$0")
 
-# shellcheck source=./lib.sh
-. "$SCRIPT_DIR/lib.sh"
+# shellcheck source=./resolve_script_dir.sh
+. "$SCRIPT_DIR/resolve_script_dir.sh"
 
 # assert_resolve_script_dir: verify resolve_script_dir returns the expected directory
 assert_resolve_script_dir() {
@@ -29,7 +29,7 @@ assert_resolve_script_dir "./foo/bar.sh" "./foo"
 
 # resolve_script_dir with a command found in PATH: returns the directory of the command
 assert_resolve_script_dir_via_path() {
-    fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_lib.XXXXXX") || return 1
+    fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_resolve_script_dir.XXXXXX") || return 1
     printf '#!/bin/sh\n' > "$fake_dir/fake_lib_test_cmd" || { rm -rf "$fake_dir"; return 1; }
     chmod +x "$fake_dir/fake_lib_test_cmd"
     actual=$(PATH="$fake_dir:$PATH" resolve_script_dir fake_lib_test_cmd)

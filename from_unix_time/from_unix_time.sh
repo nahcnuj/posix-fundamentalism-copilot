@@ -8,6 +8,7 @@ case "$tz_offset" in
     *) printf 'error: date +%%z returned unexpected value: %s\n' "$tz_offset" >&2; exit 1 ;;
 esac
 # shellcheck source=../lib.sh
-. "$(dirname -- "$0")/../lib.sh"
+_lib_sh_dir=$(dirname -- "$0")/..
+. "$_lib_sh_dir/lib.sh"
 script_dir=$(resolve_script_dir "$0") || exit 1
 awk -v tz_offset="$tz_offset" -f "$script_dir/from_unix_time.awk"
