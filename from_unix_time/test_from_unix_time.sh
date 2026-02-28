@@ -28,6 +28,33 @@ assert_eq() {
 assert_eq "0"          "$(unix_to_local 0)"
 assert_eq "1565571600" "$(unix_to_local 1565571600)"
 
+# assert_eq_with_tz: verifies that the script converts input correctly for a
+# given controlled tz_offset (using a fake date command returning that offset).
+assert_eq_with_tz() {
+    tz_offset=$1
+    input=$2
+    expected=$3
+    fake_dir=$(mktemp -d)
+    printf '#!/bin/sh\necho %s\n' "$tz_offset" > "$fake_dir/date"
+    chmod +x "$fake_dir/date"
+    actual=$(printf '%s\n' "$input" | PATH="$fake_dir:$PATH" "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/from_unix_time.sh")
+    rc=$?
+    [ -n "$fake_dir" ] && rm -rf "$fake_dir"
+    if [ "$rc" -eq 0 ] && [ "$actual" = "$expected" ]; then
+        printf 'PASS: %s (tz=%s) -> %s\n' "$input" "$tz_offset" "$actual"
+        PASS=$((PASS + 1))
+    else
+        printf 'FAIL: %s (tz=%s) -> expected %s, got %s (exit %d)\n' "$input" "$tz_offset" "$expected" "$actual" "$rc"
+        FAIL=$((FAIL + 1))
+    fi
+}
+
+# Valid tz_offset patterns (line 7: [+-][0-9][0-9][0-9][0-9])
+assert_eq_with_tz "+0000" "0"          "19700101000000"
+assert_eq_with_tz "+0900" "0"          "19700101090000"
+assert_eq_with_tz "+0530" "0"          "19700101053000"
+assert_eq_with_tz "-0700" "0"          "19691231170000"
+
 # assert_rejects_invalid_tz: verifies that the script exits non-zero when
 # date +%z returns a value that does not match the expected ±HHMM format.
 assert_rejects_invalid_tz() {
@@ -36,7 +63,7 @@ assert_rejects_invalid_tz() {
     chmod +x "$fake_dir/date"
     printf '0\n' | PATH="$fake_dir:$PATH" "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/from_unix_time.sh" >/dev/null 2>&1
     rc=$?
-    rm -rf "$fake_dir"
+    [ -n "$fake_dir" ] && rm -rf "$fake_dir"
     if [ "$rc" -ne 0 ]; then
         printf 'PASS: invalid tz_offset causes non-zero exit (%d)\n' "$rc"
         PASS=$((PASS + 1))
