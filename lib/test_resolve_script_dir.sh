@@ -29,6 +29,7 @@ assert_resolve_script_dir "$SCRIPT_DIR/resolve_script_dir.sh" "$SCRIPT_DIR"
 # resolve_script_dir with a command found in PATH: returns the directory of the command
 assert_resolve_script_dir_via_path() {
     fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_resolve_script_dir.XXXXXX") || return 1
+    fake_dir=$(cd "$fake_dir" && pwd) || return 1
     printf '#!/bin/sh\n' > "$fake_dir/fake_lib_test_cmd" || { rm -rf "$fake_dir"; return 1; }
     chmod +x "$fake_dir/fake_lib_test_cmd"
     actual=$(PATH="$fake_dir:$PATH" resolve_script_dir fake_lib_test_cmd)
