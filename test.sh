@@ -3,5 +3,8 @@
 
 SCRIPT_DIR=$(dirname "$0")
 
-"${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/to_unix_time/test_to_unix_time.sh"
-"${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/from_unix_time/test_from_unix_time.sh"
+FAIL=0
+for test_script in "$SCRIPT_DIR"/*/test_*.sh; do
+    "${SHELL_UNDER_TEST:-sh}" "$test_script" || FAIL=$((FAIL + 1))
+done
+[ "$FAIL" -eq 0 ]

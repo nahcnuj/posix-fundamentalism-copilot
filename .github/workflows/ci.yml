@@ -27,4 +27,4 @@ jobs:
       - name: Run property-based tests with ${{ matrix.shell }}
         env:
           SHELL_UNDER_TEST: ${{ matrix.shell }}
-        run: ${{ matrix.shell }} property_tests/property_test_from_unix_time.sh
+        run: ${{ matrix.shell }} property_tests/property_test_unix_time.sh
