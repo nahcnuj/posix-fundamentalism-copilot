@@ -15,7 +15,7 @@ assert_addrs() {
     fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_ipv4_addrs.XXXXXX") || return 1
     printf '#!/bin/sh\ncat <<'"'"'EOF'"'"'\n%s\nEOF\n' "$fake_ip_output" > "$fake_dir/ip"
     chmod +x "$fake_dir/ip"
-    actual=$(PATH="$fake_dir:$PATH" "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/ipv4_addrs.sh")
+    actual=$(PATH="$fake_dir:$PATH" "$SHELL" "$SCRIPT_DIR/ipv4_addrs.sh")
     rc=$?
     rm -rf "$fake_dir"
     if [ "$rc" -eq 0 ] && [ "$actual" = "$expected" ]; then
@@ -37,7 +37,7 @@ assert_addrs_ifconfig() {
     fake_ifconfig_output=$2
     expected=$3
 
-    sh_cmd=$(command -v "${SHELL_UNDER_TEST:-sh}")
+    sh_cmd=$(command -v "$SHELL")
     real_awk=$(command -v awk)
     real_cat=$(command -v cat)
     fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_ipv4_addrs.XXXXXX") || return 1
@@ -117,7 +117,7 @@ assert_addrs_ifconfig "ifconfig: inet addr: prefix stripped" \
 # assert_no_ip_no_ifconfig: verifies that the script exits non-zero and prints an error
 # when neither ip nor ifconfig is available.
 assert_no_ip_no_ifconfig() {
-    sh_cmd=$(command -v "${SHELL_UNDER_TEST:-sh}")
+    sh_cmd=$(command -v "$SHELL")
     err_output=$(PATH="" "$sh_cmd" "$SCRIPT_DIR/ipv4_addrs.sh" 2>&1)
     rc=$?
     if [ "$rc" -ne 0 ] && printf '%s' "$err_output" | grep -q 'error:'; then
