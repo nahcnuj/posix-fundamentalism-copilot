@@ -6,6 +6,8 @@ FAIL=0
 SCRIPT_DIR=$(dirname "$0")
 
 # shellcheck source=../test_helpers.sh
+# Note: unix_to_local in test_helpers.sh is only consistent with to_unix_time.sh
+# in fixed-offset (DST-free) timezones. Tests should be run with such a timezone (e.g., via TZ=UTC).
 . "$SCRIPT_DIR/../test_helpers.sh"
 
 # assert_eq: takes an input string and expected output string,
