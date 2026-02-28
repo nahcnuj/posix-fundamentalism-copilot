@@ -29,7 +29,9 @@ assert_addrs() {
 
 # assert_addrs_ifconfig: runs ipv4_addrs.sh with a fake ifconfig command in a PATH where
 # ip is not available, to exercise the ifconfig fallback branch.
-# An awk wrapper is placed in the fake_dir so awk is reachable on the restricted PATH.
+# awk and cat wrappers are placed in fake_dir because on many systems (e.g. Linux) awk, cat,
+# and ip all live in the same directory (/usr/bin or /bin), so simply excluding ip's directory
+# from PATH would also remove awk and cat. The wrappers proxy to the real binaries.
 assert_addrs_ifconfig() {
     description=$1
     fake_ifconfig_output=$2
