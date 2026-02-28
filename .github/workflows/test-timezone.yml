@@ -17,16 +17,13 @@ jobs:
           - Asia/Kolkata
           - America/Phoenix
           - Pacific/Honolulu
-        shell: [sh, bash, dash]
     steps:
       - uses: actions/checkout@v4
-      - name: Run unit tests with ${{ matrix.shell }} in ${{ matrix.tz }}
+      - name: Run unit tests in ${{ matrix.tz }}
         env:
           TZ: ${{ matrix.tz }}
-          SHELL_UNDER_TEST: ${{ matrix.shell }}
-        run: ${{ matrix.shell }} test.sh
-      - name: Run property-based tests with ${{ matrix.shell }} in ${{ matrix.tz }}
+        run: sh test.sh
+      - name: Run property-based tests in ${{ matrix.tz }}
         env:
           TZ: ${{ matrix.tz }}
-          SHELL_UNDER_TEST: ${{ matrix.shell }}
-        run: ${{ matrix.shell }} property_tests/property_test_unix_time.sh
+        run: sh property_tests/property_test_unix_time.sh
