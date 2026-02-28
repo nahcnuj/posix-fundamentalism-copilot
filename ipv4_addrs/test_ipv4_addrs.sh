@@ -121,8 +121,13 @@ assert_addrs_ifconfig "ifconfig: inet addr: prefix stripped" \
 # when neither ip nor ifconfig is available.
 assert_no_ip_no_ifconfig() {
     sh_cmd=$(command -v "$SHELL")
-    err_output=$(PATH="" "$sh_cmd" "$SCRIPT_DIR/ipv4_addrs.sh" 2>&1)
+    real_dirname=$(command -v dirname)
+    fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_ipv4_addrs.XXXXXX") || return 1
+    printf '#!/bin/sh\nexec "%s" "$@"\n' "$real_dirname" > "$fake_dir/dirname"
+    chmod +x "$fake_dir/dirname"
+    err_output=$(PATH="$fake_dir" "$sh_cmd" "$SCRIPT_DIR/ipv4_addrs.sh" 2>&1)
     rc=$?
+    rm -rf "$fake_dir"
     if [ "$rc" -ne 0 ] && printf '%s' "$err_output" | grep -q 'error:'; then
         printf 'PASS: no ip/ifconfig causes non-zero exit with error message\n'
         PASS=$((PASS + 1))
