@@ -25,6 +25,7 @@ jobs:
       - name: Run unit tests with coverage
         env:
           SHELL_UNDER_TEST: bash
+        shell: bash
         run: |
           shopt -s nullglob
           include_path=$(printf '%s\n' */test_*.sh | sed 's|/.*||' | sort -u | paste -sd,)
