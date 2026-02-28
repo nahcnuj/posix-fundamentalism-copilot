@@ -26,3 +26,4 @@ jobs:
         run: |
           ${{ matrix.shell }} to_unix_time/test_to_unix_time.sh
           ${{ matrix.shell }} from_unix_time/test_from_unix_time.sh
+          ${{ matrix.shell }} from_unix_time/property_test_from_unix_time.sh
