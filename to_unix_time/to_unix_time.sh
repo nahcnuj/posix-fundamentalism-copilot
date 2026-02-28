@@ -7,17 +7,14 @@ case "$tz_offset" in
     [+-][0-9][0-9][0-9][0-9]) : ;;
     *) printf 'error: date +%%z returned unexpected value: %s\n' "$tz_offset" >&2; exit 1 ;;
 esac
-resolve_script_dir() {
-    case "$1" in
-        */*) dirname -- "$1" ;;
-        *)
-            _p=$(command -v -- "$1") || {
-                printf 'error: cannot resolve path for %s\n' "$1" >&2
-                return 1
-            }
-            dirname -- "$_p"
-            ;;
-    esac
-}
+case "$0" in
+    */*) _lib_dir=$(dirname -- "$0") ;;
+    *)
+        _lib_dir=$(command -v -- "$0") || { printf 'error: cannot resolve path for %s\n' "$0" >&2; exit 1; }
+        _lib_dir=$(dirname -- "$_lib_dir")
+        ;;
+esac
+# shellcheck source=../lib.sh
+. "$_lib_dir/../lib.sh"
 script_dir=$(resolve_script_dir "$0") || exit 1
 awk -v tz_offset="$tz_offset" -f "$script_dir/to_unix_time.awk"
