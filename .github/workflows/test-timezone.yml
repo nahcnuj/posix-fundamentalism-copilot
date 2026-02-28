@@ -1,0 +1,29 @@
+name: Test with multiple timezones
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-timezone:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        tz:
+          - UTC
+          - Asia/Tokyo
+          - Asia/Kolkata
+          - America/Phoenix
+          - Pacific/Honolulu
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run unit tests in ${{ matrix.tz }}
+        env:
+          TZ: ${{ matrix.tz }}
+        run: sh test.sh
+      - name: Run property-based tests in ${{ matrix.tz }}
+        env:
+          TZ: ${{ matrix.tz }}
+        run: sh property_tests/property_test_unix_time.sh
