@@ -37,8 +37,12 @@ assert_addrs_ifconfig() {
     fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_ipv4_addrs.XXXXXX") || return 1
     printf '#!/bin/sh\ncat <<'"'"'EOF'"'"'\n%s\nEOF\n' "$fake_ifconfig_output" > "$fake_dir/ifconfig"
     chmod +x "$fake_dir/ifconfig"
-    ln -s "$(command -v awk)" "$fake_dir/awk"
-    ln -s "$(command -v cat)" "$fake_dir/cat"
+    real_awk=$(command -v awk || printf 'awk')
+    real_cat=$(command -v cat || printf 'cat')
+    printf '#!/bin/sh\nexec "%s" "$@"\n' "$real_awk" > "$fake_dir/awk"
+    chmod +x "$fake_dir/awk"
+    printf '#!/bin/sh\nexec "%s" "$@"\n' "$real_cat" > "$fake_dir/cat"
+    chmod +x "$fake_dir/cat"
     sh_cmd="${SHELL_UNDER_TEST:-sh}"
     case "$sh_cmd" in
         /*) : ;;
@@ -105,6 +109,36 @@ assert_addrs_ifconfig "ifconfig: localhost excluded" \
 eth0: flags=4163<UP>
         inet 192.168.1.100 netmask 255.255.255.0" \
     "192.168.1.100"
+
+assert_addrs_ifconfig "ifconfig: inet addr: prefix stripped" \
+    "eth0: flags=4163<UP>  mtu 1500
+        inet addr:192.168.1.100  Bcast:192.168.1.255  Mask:255.255.255.0" \
+    "192.168.1.100"
+
+# assert_no_ip_no_ifconfig: verifies that the script exits non-zero and prints an error
+# when neither ip nor ifconfig is available.
+assert_no_ip_no_ifconfig() {
+    fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_ipv4_addrs.XXXXXX") || return 1
+    real_awk=$(command -v awk || printf 'awk')
+    printf '#!/bin/sh\nexec "%s" "$@"\n' "$real_awk" > "$fake_dir/awk"
+    chmod +x "$fake_dir/awk"
+    sh_cmd="${SHELL_UNDER_TEST:-sh}"
+    case "$sh_cmd" in
+        /*) : ;;
+        *) sh_cmd=$(command -v "$sh_cmd") ;;
+    esac
+    err_output=$(PATH="$fake_dir" "$sh_cmd" "$SCRIPT_DIR/ipv4_addrs.sh" 2>&1)
+    rc=$?
+    rm -rf "$fake_dir"
+    if [ "$rc" -ne 0 ] && printf '%s' "$err_output" | grep -q 'error:'; then
+        printf 'PASS: no ip/ifconfig causes non-zero exit with error message\n'
+        PASS=$((PASS + 1))
+    else
+        printf 'FAIL: expected non-zero exit with error message, got exit %d and output: %s\n' "$rc" "$err_output"
+        FAIL=$((FAIL + 1))
+    fi
+}
+assert_no_ip_no_ifconfig
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
