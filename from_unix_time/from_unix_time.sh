@@ -4,7 +4,7 @@
 # Note: only fixed-offset (DST-free) timezones are supported.
 tz_offset=$(date +%z)
 case "$tz_offset" in
-    [+-][0-9][0-9][0-9][0-9]) ;;
+    [+-][0-9][0-9][0-9][0-9]) : ;;
     *) printf 'error: date +%%z returned unexpected value: %s\n' "$tz_offset" >&2; exit 1 ;;
 esac
 awk -v tz_offset="$tz_offset" '
