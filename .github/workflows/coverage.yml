@@ -1,0 +1,115 @@
+name: Coverage
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install kcov
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y binutils-dev libcurl4-openssl-dev zlib1g-dev libdw-dev cmake
+          git clone https://github.com/SimonKagstrom/kcov.git /tmp/kcov
+          git -C /tmp/kcov checkout a39874f938ce13f7a65f253120d1ec946b349ffe
+          cmake -S /tmp/kcov -B /tmp/kcov/build
+          cmake --build /tmp/kcov/build -j$(nproc)
+          sudo cmake --install /tmp/kcov/build
+      - name: Run unit tests with coverage
+        env:
+          SHELL_UNDER_TEST: bash
+        run: kcov --include-path=from_unix_time,to_unix_time --exclude-pattern=test coverage ./test.sh
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+      - name: Extract coverage summary
+        id: coverage
+        run: |
+          if [ -f coverage/kcov-merged/coverage.json ]; then
+            json_file=coverage/kcov-merged/coverage.json
+          else
+            json_file=$(find coverage -name 'coverage.json' -print -quit)
+          fi
+          if [ -z "$json_file" ]; then
+            echo "coverage summary JSON not found" >&2
+            exit 1
+          fi
+          percent=$(jq -r '.percent_covered // empty' "$json_file")
+          covered=$(jq -r '.covered_lines // empty' "$json_file")
+          total=$(jq -r '.total_lines // empty' "$json_file")
+          if [ -z "$percent" ] || [ -z "$covered" ] || [ -z "$total" ]; then
+            echo "Missing or null coverage fields in ${json_file}" >&2
+            exit 1
+          fi
+          echo "percent=${percent}" >> "$GITHUB_OUTPUT"
+          echo "covered=${covered}" >> "$GITHUB_OUTPUT"
+          echo "total=${total}" >> "$GITHUB_OUTPUT"
+          echo "json_file=$(realpath "$json_file")" >> "$GITHUB_OUTPUT"
+      - name: Post coverage comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const percent = '${{ steps.coverage.outputs.percent }}';
+            const covered = '${{ steps.coverage.outputs.covered }}';
+            const total = '${{ steps.coverage.outputs.total }}';
+            const jsonFile = '${{ steps.coverage.outputs.json_file }}';
+            if (!percent || !covered || !total || !jsonFile) {
+              core.warning('Coverage values are missing; skipping PR comment.');
+              return;
+            }
+            let data;
+            try {
+              data = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+            } catch (e) {
+              core.warning(`Failed to read coverage JSON at ${jsonFile}: ${e.message}`);
+              return;
+            }
+            const workspace = (process.env.GITHUB_WORKSPACE || '') + '/';
+            const files = (data.files || []).map(f => ({
+              name: f.file.startsWith(workspace) ? f.file.slice(workspace.length) : f.file,
+              covered: f.covered_lines,
+              total: f.total_lines,
+              percent: f.percent_covered,
+            }));
+
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const lines = [
+              '## Coverage Report',
+              '',
+              '| Metric | Value |',
+              '|--------|-------|',
+              `| Lines covered | ${covered} / ${total} |`,
+              `| Coverage | ${percent}% |`,
+            ];
+            if (files.length > 0) {
+              lines.push(
+                '',
+                '<details>',
+                '<summary>Per-file coverage</summary>',
+                '',
+                '| File | Lines covered | Coverage |',
+                '|------|--------------|----------|',
+                ...files.map(f => `| \`${f.name}\` | ${f.covered} / ${f.total} | ${f.percent}% |`),
+                '',
+                '</details>',
+              );
+            }
+            lines.push('', `[View detailed report](${runUrl})`);
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: lines.join('\n'),
+            });
