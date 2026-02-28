@@ -1,6 +1,6 @@
 #!/bin/sh
-# Property-based tests for from_unix_time.sh
-# Verifies round-trip conversion between UNIX timestamps and UTC datetime strings.
+# Property-based tests verifying round-trip conversion between UNIX timestamps and UTC datetime strings.
+# Tests both to_unix_time.sh and from_unix_time.sh together.
 
 PASS=0
 FAIL=0
@@ -10,7 +10,7 @@ SCRIPT_DIR=$(dirname "$0")
 # and verifies the final result matches the original input.
 assert_roundtrip_unix() {
     input=$1
-    datetime=$(printf '%s\n' "$input" | "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/from_unix_time.sh")
+    datetime=$(printf '%s\n' "$input" | "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/../from_unix_time/from_unix_time.sh")
     actual=$(printf '%s\n' "$datetime" | "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/../to_unix_time/to_unix_time.sh")
     if [ "$actual" = "$input" ]; then
         printf 'PASS (roundtrip unix->datetime->unix): %s -> %s -> %s\n' "$input" "$datetime" "$actual"
@@ -26,7 +26,7 @@ assert_roundtrip_unix() {
 assert_roundtrip_datetime() {
     input=$1
     unix=$(printf '%s\n' "$input" | "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/../to_unix_time/to_unix_time.sh")
-    actual=$(printf '%s\n' "$unix" | "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/from_unix_time.sh")
+    actual=$(printf '%s\n' "$unix" | "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/../from_unix_time/from_unix_time.sh")
     if [ "$actual" = "$input" ]; then
         printf 'PASS (roundtrip datetime->unix->datetime): %s -> %s -> %s\n' "$input" "$unix" "$actual"
         PASS=$((PASS + 1))

@@ -20,10 +20,11 @@ jobs:
             shell: zsh
     steps:
       - uses: actions/checkout@v4
-      - name: Run tests with ${{ matrix.shell }}
+      - name: Run unit tests with ${{ matrix.shell }}
         env:
           SHELL_UNDER_TEST: ${{ matrix.shell }}
-        run: |
-          ${{ matrix.shell }} to_unix_time/test_to_unix_time.sh
-          ${{ matrix.shell }} from_unix_time/test_from_unix_time.sh
-          ${{ matrix.shell }} from_unix_time/property_test_from_unix_time.sh
+        run: ${{ matrix.shell }} test.sh
+      - name: Run property-based tests with ${{ matrix.shell }}
+        env:
+          SHELL_UNDER_TEST: ${{ matrix.shell }}
+        run: ${{ matrix.shell }} property_tests/property_test_from_unix_time.sh
