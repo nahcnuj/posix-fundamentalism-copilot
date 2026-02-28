@@ -15,22 +15,6 @@ jobs:
         run: |
           find . -name "*.sh" -not -path "./examples/non_posix.sh" -print0 | xargs -0 shellcheck --shell=sh --severity=warning
 
-  coverage:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install kcov
-        run: sudo apt-get install -y kcov
-      - name: Run unit tests with coverage
-        run: kcov --include-path=. coverage sh test.sh
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage/
-
   test:
     runs-on: ${{ matrix.os }}
     permissions:
