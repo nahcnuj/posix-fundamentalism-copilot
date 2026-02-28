@@ -1,9 +1,14 @@
 #!/bin/sh
-# Read a UTC datetime string in YYYYMMDDhhmmss format from stdin
+# Read a datetime string in YYYYMMDDhhmmss format from stdin (interpreted in local timezone)
 # and print the corresponding UNIX timestamp.
-awk '
+tz_offset=$(date +%z)
+awk -v tz_offset="$tz_offset" '
 BEGIN {
     split("31 28 31 30 31 30 31 31 30 31 30 31", days_in_month)
+    sign = (substr(tz_offset, 1, 1) == "-") ? -1 : 1
+    hh = substr(tz_offset, 2, 2) + 0
+    mm = substr(tz_offset, 4, 2) + 0
+    offset_sec = sign * (hh * 3600 + mm * 60)
 }
 {
     year  = substr($0, 1, 4) + 0
@@ -14,11 +19,20 @@ BEGIN {
     sec   = substr($0, 13, 2) + 0
 
     total_days = 0
-    for (y = 1970; y < year; y++) {
-        if ((y % 4 == 0 && y % 100 != 0) || y % 400 == 0)
-            total_days += 366
-        else
-            total_days += 365
+    if (year >= 1970) {
+        for (y = 1970; y < year; y++) {
+            if ((y % 4 == 0 && y % 100 != 0) || y % 400 == 0)
+                total_days += 366
+            else
+                total_days += 365
+        }
+    } else {
+        for (y = year; y < 1970; y++) {
+            if ((y % 4 == 0 && y % 100 != 0) || y % 400 == 0)
+                total_days -= 366
+            else
+                total_days -= 365
+        }
     }
 
     is_leap = ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0)
@@ -29,6 +43,6 @@ BEGIN {
 
     total_days += day - 1
 
-    print total_days * 86400 + hour * 3600 + min * 60 + sec
+    print total_days * 86400 + hour * 3600 + min * 60 + sec - offset_sec
 }
 '
