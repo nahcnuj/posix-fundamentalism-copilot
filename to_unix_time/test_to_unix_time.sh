@@ -74,25 +74,25 @@ assert_rejects_invalid_tz() {
 }
 assert_rejects_invalid_tz
 
-# assert_bare_name_not_in_path: verifies that the bare-name invocation path
-# (the '*) command -v' branch) is reachable and exits non-zero when the script
-# cannot be resolved via PATH.
-assert_bare_name_not_in_path() {
+# assert_bare_name_via_path: verifies the '*) command -v' branch when the script
+# is invoked as a bare name with $SCRIPT_DIR in PATH.
+# BASH_SOURCE[0] is set to the absolute path by bash (found via PATH), so kcov can track it.
+assert_bare_name_via_path() {
     fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_to_unix_time.XXXXXX") || return 1
     printf '#!/bin/sh\necho +0000\n' > "$fake_dir/date"
     chmod +x "$fake_dir/date"
-    ( cd "$SCRIPT_DIR" && printf '19700101000000\n' | PATH="$fake_dir" "$SHELL" to_unix_time.sh ) >/dev/null 2>&1
+    actual=$(printf '19700101000000\n' | PATH="$SCRIPT_DIR:$fake_dir:$PATH" "$SHELL" to_unix_time.sh)
     rc=$?
     rm -rf "$fake_dir"
-    if [ "$rc" -ne 0 ]; then
-        printf 'PASS: to_unix_time.sh (bare name, not in PATH) causes non-zero exit (%d)\n' "$rc"
+    if [ "$rc" -eq 0 ] && [ "$actual" = "0" ]; then
+        printf 'PASS: to_unix_time.sh (bare name via PATH) -> %s\n' "$actual"
         PASS=$((PASS + 1))
     else
-        printf 'FAIL: expected non-zero exit for bare-name invocation without PATH, got 0\n'
+        printf 'FAIL: to_unix_time.sh (bare name via PATH) -> expected 0, got %s (exit %d)\n' "$actual" "$rc"
         FAIL=$((FAIL + 1))
     fi
 }
-assert_bare_name_not_in_path
+assert_bare_name_via_path
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

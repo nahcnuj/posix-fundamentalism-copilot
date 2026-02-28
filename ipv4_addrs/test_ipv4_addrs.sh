@@ -138,23 +138,25 @@ assert_no_ip_no_ifconfig() {
 }
 assert_no_ip_no_ifconfig
 
-# assert_bare_name_not_in_path: verifies that the bare-name invocation path
-# (the '*) command -v' branch) is reachable and exits non-zero when the script
-# cannot be resolved via PATH.
-assert_bare_name_not_in_path() {
+# assert_bare_name_via_path: verifies the '*) command -v' branch when the script
+# is invoked as a bare name with $SCRIPT_DIR in PATH.
+# BASH_SOURCE[0] is set to the absolute path by bash (found via PATH), so kcov can track it.
+assert_bare_name_via_path() {
     fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_ipv4_addrs.XXXXXX") || return 1
-    ( cd "$SCRIPT_DIR" && PATH="$fake_dir" "$SHELL" ipv4_addrs.sh ) >/dev/null 2>&1
+    printf '#!/bin/sh\nprintf "2: eth0:\\n    inet 192.168.1.1/24 scope global eth0\\n"\n' > "$fake_dir/ip"
+    chmod +x "$fake_dir/ip"
+    actual=$(PATH="$SCRIPT_DIR:$fake_dir:$PATH" "$SHELL" ipv4_addrs.sh)
     rc=$?
     rm -rf "$fake_dir"
-    if [ "$rc" -ne 0 ]; then
-        printf 'PASS: ipv4_addrs.sh (bare name, not in PATH) causes non-zero exit (%d)\n' "$rc"
+    if [ "$rc" -eq 0 ] && [ "$actual" = "192.168.1.1" ]; then
+        printf 'PASS: ipv4_addrs.sh (bare name via PATH) -> %s\n' "$actual"
         PASS=$((PASS + 1))
     else
-        printf 'FAIL: expected non-zero exit for bare-name invocation without PATH, got 0\n'
+        printf 'FAIL: ipv4_addrs.sh (bare name via PATH) -> expected 192.168.1.1, got %s (exit %d)\n' "$actual" "$rc"
         FAIL=$((FAIL + 1))
     fi
 }
-assert_bare_name_not_in_path
+assert_bare_name_via_path
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
