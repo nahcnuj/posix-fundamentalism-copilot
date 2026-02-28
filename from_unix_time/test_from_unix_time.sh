@@ -28,5 +28,24 @@ assert_eq() {
 assert_eq "0"          "$(unix_to_local 0)"
 assert_eq "1565571600" "$(unix_to_local 1565571600)"
 
+# assert_rejects_invalid_tz: verifies that the script exits non-zero when
+# date +%z returns a value that does not match the expected ±HHMM format.
+assert_rejects_invalid_tz() {
+    fake_dir=$(mktemp -d)
+    printf '#!/bin/sh\necho BADTZ\n' > "$fake_dir/date"
+    chmod +x "$fake_dir/date"
+    printf '0\n' | PATH="$fake_dir:$PATH" "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/from_unix_time.sh" >/dev/null 2>&1
+    rc=$?
+    rm -rf "$fake_dir"
+    if [ "$rc" -ne 0 ]; then
+        printf 'PASS: invalid tz_offset causes non-zero exit (%d)\n' "$rc"
+        PASS=$((PASS + 1))
+    else
+        printf 'FAIL: expected non-zero exit for invalid tz_offset, got 0\n'
+        FAIL=$((FAIL + 1))
+    fi
+}
+assert_rejects_invalid_tz
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
