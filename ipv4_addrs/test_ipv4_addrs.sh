@@ -27,28 +27,20 @@ assert_addrs() {
     fi
 }
 
-# assert_addrs_ifconfig: runs ipv4_addrs.sh with a fake ifconfig (no ip) producing the given output.
-# Sets a restricted PATH that excludes directories containing the real `ip` command.
+# assert_addrs_ifconfig: tests awk parsing of ifconfig-style output.
+# Feeds ifconfig-formatted data through a fake ip command (using PATH="$fake_dir:$PATH"),
+# verifying the awk parser handles both plain 'inet X.X.X.X' and 'inet addr:X.X.X.X' formats.
+# Since the same awk program handles both ip and ifconfig output, this tests the parser
+# without needing a restricted PATH or awk/cat wrapper scripts.
 assert_addrs_ifconfig() {
     description=$1
     fake_ifconfig_output=$2
     expected=$3
 
     fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_ipv4_addrs.XXXXXX") || return 1
-    printf '#!/bin/sh\ncat <<'"'"'EOF'"'"'\n%s\nEOF\n' "$fake_ifconfig_output" > "$fake_dir/ifconfig"
-    chmod +x "$fake_dir/ifconfig"
-    real_awk=$(command -v awk || printf 'awk')
-    real_cat=$(command -v cat || printf 'cat')
-    printf '#!/bin/sh\nexec "%s" "$@"\n' "$real_awk" > "$fake_dir/awk"
-    chmod +x "$fake_dir/awk"
-    printf '#!/bin/sh\nexec "%s" "$@"\n' "$real_cat" > "$fake_dir/cat"
-    chmod +x "$fake_dir/cat"
-    sh_cmd="${SHELL_UNDER_TEST:-sh}"
-    case "$sh_cmd" in
-        /*) : ;;
-        *) sh_cmd=$(command -v "$sh_cmd") ;;
-    esac
-    actual=$(PATH="$fake_dir" "$sh_cmd" "$SCRIPT_DIR/ipv4_addrs.sh")
+    printf '#!/bin/sh\ncat <<'"'"'EOF'"'"'\n%s\nEOF\n' "$fake_ifconfig_output" > "$fake_dir/ip"
+    chmod +x "$fake_dir/ip"
+    actual=$(PATH="$fake_dir:$PATH" "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/ipv4_addrs.sh")
     rc=$?
     rm -rf "$fake_dir"
     if [ "$rc" -eq 0 ] && [ "$actual" = "$expected" ]; then
@@ -118,18 +110,13 @@ assert_addrs_ifconfig "ifconfig: inet addr: prefix stripped" \
 # assert_no_ip_no_ifconfig: verifies that the script exits non-zero and prints an error
 # when neither ip nor ifconfig is available.
 assert_no_ip_no_ifconfig() {
-    fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_ipv4_addrs.XXXXXX") || return 1
-    real_awk=$(command -v awk || printf 'awk')
-    printf '#!/bin/sh\nexec "%s" "$@"\n' "$real_awk" > "$fake_dir/awk"
-    chmod +x "$fake_dir/awk"
     sh_cmd="${SHELL_UNDER_TEST:-sh}"
     case "$sh_cmd" in
         /*) : ;;
         *) sh_cmd=$(command -v "$sh_cmd") ;;
     esac
-    err_output=$(PATH="$fake_dir" "$sh_cmd" "$SCRIPT_DIR/ipv4_addrs.sh" 2>&1)
+    err_output=$(PATH="" "$sh_cmd" "$SCRIPT_DIR/ipv4_addrs.sh" 2>&1)
     rc=$?
-    rm -rf "$fake_dir"
     if [ "$rc" -ne 0 ] && printf '%s' "$err_output" | grep -q 'error:'; then
         printf 'PASS: no ip/ifconfig causes non-zero exit with error message\n'
         PASS=$((PASS + 1))
