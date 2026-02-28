@@ -130,28 +130,29 @@ assert_no_ip_no_ifconfig() {
 }
 assert_no_ip_no_ifconfig
 
-# assert_addrs_noslash: like assert_addrs but invokes the script without a slash in $0,
-# exercising the script_dir fallback to ".".
+# assert_addrs_noslash: like assert_addrs but invokes the script via PATH from a
+# different working directory, covering the PATH-based invocation case.
 assert_addrs_noslash() {
     description=$1
     fake_ip_output=$2
     expected=$3
 
+    abs_script_dir=$(cd "$SCRIPT_DIR" && pwd) || return 1
     fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_ipv4_addrs.XXXXXX") || return 1
     printf '#!/bin/sh\ncat <<'"'"'EOF'"'"'\n%s\nEOF\n' "$fake_ip_output" > "$fake_dir/ip"
     chmod +x "$fake_dir/ip"
-    actual=$(cd "$SCRIPT_DIR" && PATH="$fake_dir:$PATH" "$SHELL" ipv4_addrs.sh)
+    actual=$(cd "$fake_dir" && PATH="$abs_script_dir:$fake_dir:$PATH" "$SHELL" ipv4_addrs.sh)
     rc=$?
     rm -rf "$fake_dir"
     if [ "$rc" -eq 0 ] && [ "$actual" = "$expected" ]; then
-        printf 'PASS: %s\n' "$description"
+        printf 'PASS: %s (no-slash $0)\n' "$description"
         PASS=$((PASS + 1))
     else
-        printf 'FAIL: %s -> expected %s, got %s (exit %d)\n' "$description" "$expected" "$actual" "$rc"
+        printf 'FAIL: %s -> expected %s, got %s (no-slash $0, exit %d)\n' "$description" "$expected" "$actual" "$rc"
         FAIL=$((FAIL + 1))
     fi
 }
-assert_addrs_noslash 'ip: single address (no-slash $0)' \
+assert_addrs_noslash 'ip: single address' \
     "2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500
     inet 192.168.1.100/24 brd 192.168.1.255 scope global eth0
     inet6 fe80::1/64 scope link" \
