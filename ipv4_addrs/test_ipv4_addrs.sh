@@ -27,20 +27,25 @@ assert_addrs() {
     fi
 }
 
-# assert_addrs_ifconfig: tests awk parsing of ifconfig-style output.
-# Feeds ifconfig-formatted data through a fake ip command (using PATH="$fake_dir:$PATH"),
-# verifying the awk parser handles both plain 'inet X.X.X.X' and 'inet addr:X.X.X.X' formats.
-# Since the same awk program handles both ip and ifconfig output, this tests the parser
-# without needing a restricted PATH or awk/cat wrapper scripts.
+# assert_addrs_ifconfig: runs ipv4_addrs.sh with a fake ifconfig command in a PATH where
+# ip is not available, to exercise the ifconfig fallback branch.
+# An awk wrapper is placed in the fake_dir so awk is reachable on the restricted PATH.
 assert_addrs_ifconfig() {
     description=$1
     fake_ifconfig_output=$2
     expected=$3
 
+    sh_cmd=$(command -v "${SHELL_UNDER_TEST:-sh}")
+    real_awk=$(command -v awk)
+    real_cat=$(command -v cat)
     fake_dir=$(mktemp -d "${TMPDIR:-/tmp}/test_ipv4_addrs.XXXXXX") || return 1
-    printf '#!/bin/sh\ncat <<'"'"'EOF'"'"'\n%s\nEOF\n' "$fake_ifconfig_output" > "$fake_dir/ip"
-    chmod +x "$fake_dir/ip"
-    actual=$(PATH="$fake_dir:$PATH" "${SHELL_UNDER_TEST:-sh}" "$SCRIPT_DIR/ipv4_addrs.sh")
+    printf '#!/bin/sh\ncat <<'"'"'EOF'"'"'\n%s\nEOF\n' "$fake_ifconfig_output" > "$fake_dir/ifconfig"
+    chmod +x "$fake_dir/ifconfig"
+    printf '#!/bin/sh\nexec "%s" "$@"\n' "$real_awk" > "$fake_dir/awk"
+    chmod +x "$fake_dir/awk"
+    printf '#!/bin/sh\nexec "%s" "$@"\n' "$real_cat" > "$fake_dir/cat"
+    chmod +x "$fake_dir/cat"
+    actual=$(PATH="$fake_dir" "$sh_cmd" "$SCRIPT_DIR/ipv4_addrs.sh")
     rc=$?
     rm -rf "$fake_dir"
     if [ "$rc" -eq 0 ] && [ "$actual" = "$expected" ]; then
