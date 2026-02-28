@@ -110,11 +110,7 @@ assert_addrs_ifconfig "ifconfig: inet addr: prefix stripped" \
 # assert_no_ip_no_ifconfig: verifies that the script exits non-zero and prints an error
 # when neither ip nor ifconfig is available.
 assert_no_ip_no_ifconfig() {
-    sh_cmd="${SHELL_UNDER_TEST:-sh}"
-    case "$sh_cmd" in
-        /*) : ;;
-        *) sh_cmd=$(command -v "$sh_cmd") ;;
-    esac
+    sh_cmd=$(command -v "${SHELL_UNDER_TEST:-sh}")
     err_output=$(PATH="" "$sh_cmd" "$SCRIPT_DIR/ipv4_addrs.sh" 2>&1)
     rc=$?
     if [ "$rc" -ne 0 ] && printf '%s' "$err_output" | grep -q 'error:'; then
